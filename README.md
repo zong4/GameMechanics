@@ -1,28 +1,21 @@
-# SuperHot - Unity Remake
+# Game Mechanics Showcase:
+
+## SuperHot
 
 A Unity-based recreation of SuperHot's core experience, focusing on its iconic time manipulation mechanics and combat replay features to deliver the unique "time as a weapon" tactical shooting gameplay.
 
-![Demo](./Assets/Recording.gif)
+![Demo](./Assets/SuperHot.gif)
 
-# Core Features
+### Upcoming Plans
 
-## 1. Time Manipulation System
+- [ ] Planned support for 2-4 player online battles, including cooperative missions and competitive modes. The time manipulation mechanic will be synchronized across players to enable new team-based tactics.
 
-A innovative time-flow mechanic: time slows to a near halt when the player stands still, and resumes normal speed during movement, aiming, or attacks—giving you ample tactical space to plan every move.
+## Bomber
 
-## 2. Combat Replay Functionality
+A new game developed by reimagining the core mechanics of Öoo, where players become the bomb itself—using explosive recoil to jump, double-jump, and leap diagonally.
 
-Automatically records every detail of each battle, including movement paths, shooting timings, and kill moments. Instantly review your best plays after combat ends.
+![](./Assets/Bomber.gif)
 
-# How to Play
+### Upcoming Plans
 
-* Movement: Use WASD keys to move your character.
-* Aim: Drag the mouse to turn around and aim your weapon.
-* Shoot: Left-click to fire your current weapon.
-* After you kill all enemies, the replay will begin automatically.
-
-# Upcoming Plans
-
-## 1. Online Multiplayer (In Development)
-
-Planned support for 2-4 player online battles, including cooperative missions and competitive modes. The time manipulation mechanic will be synchronized across players to enable new team-based tactics.
+- [ ] Explosive Obstacle Destruction.

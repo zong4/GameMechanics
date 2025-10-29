@@ -19,3 +19,17 @@ A new game developed by reimagining the core mechanics of Öoo, where players be
 ### Upcoming Plans
 
 - [ ] Explosive Obstacle Destruction.
+
+## Minecraft
+
+A new creation that reimagines Minecraft’s classic world-generation core mechanics through Perlin Noise—faithfully reproducing the game’s iconic procedural map system while optimizing terrain logic.
+
+![](./Assets/MC.png)
+
+### Upcoming Plans
+
+- [ ] Parallelized Terrain Generation
+
+- [ ] Chunk-Based Loading and Streaming
+
+- [ ] Specific block types and their properties

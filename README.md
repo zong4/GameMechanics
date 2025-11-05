@@ -87,6 +87,10 @@ Design your own **attraction matrix**, spawn colorful particles, and watch emerg
 - `M` — Toggle menu  
 - `Esc` — Close color picker  
 
+**Camera Controls**
+- `W, A, S, D` — Move camera  
+- Mouse Scroll — Zoom in/out  
+
 **Simulation Controls**
 - `Space` — Pause / Resume simulation  
 - `R` — Clear all particles  

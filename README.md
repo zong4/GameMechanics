@@ -17,9 +17,9 @@ Rebuilt from scratch to replicate its **time manipulation** and **combat replay*
 ![Demo](./Assets/SuperHot.gif)
 
 ### 🧩 Core Features
-- Time-based motion control
-- Bullet-time combat system
-- Replay system capturing player motion
+- Time-based motion control  
+- Bullet-time combat system  
+- Replay system capturing player motion  
 
 ### 🛠️ Upcoming Plans
 - [ ] 2–4 player online mode with synchronized time flow  
@@ -34,8 +34,8 @@ A physics-based platformer where you **are the bomb** — using explosive recoil
 ![](./Assets/Bomber.gif)
 
 ### 🧩 Core Features
-- Explosion-driven movement system
-- Diagonal jump and aerial control mechanics
+- Explosion-driven movement system  
+- Diagonal jump and aerial control mechanics  
 
 ### 🛠️ Upcoming Plans
 - [ ] Destructible environment and obstacle interaction  
@@ -62,11 +62,49 @@ Faithfully reproduces its **chunk-based terrain system** while optimizing genera
 
 ---
 
+## 🌌 ParticleLife
+
+A **particle simulation sandbox** where particles interact according to customizable attraction rules.  
+Design your own **attraction matrix**, spawn colorful particles, and watch emergent behaviors unfold — from orbiting swarms to chaotic ecosystems.
+
+<!-- ![](./Assets/ParticleLife.gif) -->
+
+### 🧩 Core Features
+- Interactive particle system driven by a configurable attraction matrix  
+- Real-time parameter tuning and visualization  
+- Boundary selection and spawn control for creative setups  
+- Emergent pattern generation through simple local rules  
+
+### 🕹️ Basic Procedure
+1. **Select area** → Draw a boundary for spawning particles  
+2. **Spawn** → Create particles in the selected region  
+3. **Pause / Space** → Switch between Edit and Simulation mode  
+4. Adjust parameters to generate diverse visual patterns  
+
+### 🎛️ Controls
+
+**UI Controls**
+- `M` — Toggle menu  
+- `Esc` — Close color picker  
+
+**Simulation Controls**
+- `Space` — Pause / Resume simulation  
+- `R` — Clear all particles  
+- `B` — Enter or exit boundary selection mode  
+- `<` / `>` — Decrease / Increase force magnitude  
+
+### 🛠️ Upcoming Plans
+- [ ] Store settings in local storage  
+- [ ] Improved UI and extended customization options  
+- [ ] 3D particle support  
+
+---
+
 ## 🧠 Tech Stack
-- **Engine:** Unity (URP)
-- **Language:** C#
-- **Libraries:** Cinemachine, DOTS (for procedural generation)
-- **Version Control:** Git + LFS
+- **Engine:** Unity (URP)  
+- **Language:** C#  
+- **Frameworks:** DOTS  
+- **Focus:** Gameplay prototyping, procedural systems, player feedback  
 
 ---
 
@@ -76,79 +114,3 @@ Faithfully reproduces its **chunk-based terrain system** while optimizing genera
 **Email:** [zzoonng@163.com](mailto:zzoonng@163.com)
 
 > _“Play is the highest form of research.” – Albert Einstein_
-
-
-<!-- # 🎮 Game Mechanics Showcase
-
-Exploring the art of **game mechanics** — each project focuses on a single innovative system that defines the player experience.  
-All prototypes are built in **Unity**, emphasizing creativity, responsiveness, and design clarity.
-
----
-
-## 🕒 SuperHot – *Time Moves When You Move*
-
-![SuperHot Demo](./Assets/SuperHot.gif)
-
-A faithful recreation of **SuperHot’s** signature time manipulation gameplay.  
-Here, movement equals time — the world freezes until the player acts. Every motion, every bullet, every dodge becomes a deliberate tactical choice.
-
-**Highlights**
-- Dynamic “bullet-time” simulation  
-- Replay system that captures player motion for cinematic playback  
-- Built entirely in Unity using custom motion and time control logic  
-
-**In Progress**
-- Multiplayer mode with synchronized time flow  
-- Cooperative missions and competitive tactical battles  
-
----
-
-## 💣 Bomber – *Be the Explosion*
-
-![Bomber Demo](./Assets/Bomber.gif)
-
-In this prototype, the player **is the bomb** — using controlled explosions as propulsion.  
-Each detonation is both a weapon and a movement mechanic, creating a rhythm-based, physics-driven platformer.
-
-**Highlights**
-- Explosion recoil as a movement system  
-- Diagonal leap and double-jump mechanics  
-- Physics-based traversal design  
-
-**In Progress**
-- Environmental destruction  
-- Chain-reaction puzzles and level design  
-
----
-
-## 🌍 Minecraft Recreation – *Procedural Worlds, Reimagined*
-
-![Minecraft Demo](./Assets/MC.png)
-
-A deep dive into **procedural generation** inspired by Minecraft’s terrain system.  
-This project rebuilds the world generation pipeline from the ground up using **Perlin Noise**, optimized for real-time performance and modularity.
-
-**Highlights**
-- 2D & 3D Perlin noise terrain generation  
-- Real-time mesh construction  
-- Chunk streaming and dynamic loading  
-
-**In Progress**
-- Multi-threaded terrain generation  
-- Custom block data and material properties  
-
----
-
-## 🧠 Tools & Tech
-- **Engine:** Unity (URP)  
-- **Language:** C#  
-- **Frameworks:** DOTS, Cinemachine  
-- **Focus:** Gameplay prototyping, system design, player feedback  
-
----
-
-## 👋 About Me
-I’m a gameplay designer and programmer exploring how **mechanics shape emotion and strategy**.  
-From slow-motion combat to self-propelled explosions, every prototype here tests a new idea in **player control and feedback**.
-
-[🌐 Portfolio Website](your-portfolio-link.com) • [🐙 GitHub](your-github-link) • [✉️ Contact Me](mailto:your@email.com) -->

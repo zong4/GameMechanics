@@ -71,14 +71,14 @@ Faithfully reproduces its **chunk-based terrain system** while optimizing genera
 ---
 
 ## 📬 Contact
-**Author:** [Your Name or Handle]  
-**Portfolio:** [your-portfolio-link.com]  
-**Email:** [your@email.com]
+**Author:** [Zong]  
+**Portfolio:** [zong4.github.io](https://zong4.github.io)  
+**Email:** [zzoonng@163.com](mailto:zzoonng@163.com)
 
 > _“Play is the highest form of research.” – Albert Einstein_
 
 
-# 🎮 Game Mechanics Showcase
+<!-- # 🎮 Game Mechanics Showcase
 
 Exploring the art of **game mechanics** — each project focuses on a single innovative system that defines the player experience.  
 All prototypes are built in **Unity**, emphasizing creativity, responsiveness, and design clarity.
@@ -151,4 +151,4 @@ This project rebuilds the world generation pipeline from the ground up using **P
 I’m a gameplay designer and programmer exploring how **mechanics shape emotion and strategy**.  
 From slow-motion combat to self-propelled explosions, every prototype here tests a new idea in **player control and feedback**.
 
-[🌐 Portfolio Website](your-portfolio-link.com) • [🐙 GitHub](your-github-link) • [✉️ Contact Me](mailto:your@email.com)
+[🌐 Portfolio Website](your-portfolio-link.com) • [🐙 GitHub](your-github-link) • [✉️ Contact Me](mailto:your@email.com) -->

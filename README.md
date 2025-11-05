@@ -113,8 +113,7 @@ Design your own **attraction matrix**, spawn colorful particles, and watch emerg
 ---
 
 ## 📬 Contact
-**Author:** [Zong]  
-**GitHub:** [github.com/zong4](https://github.com/zong4)    
+**Author:** [Zong](https://github.com/zong4)    
 **Portfolio:** [zong4.github.io](https://zong4.github.io)   
 **Email:** [zzoonng@163.com](mailto:zzoonng@163.com)    
 

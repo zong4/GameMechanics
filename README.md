@@ -1,39 +1,3 @@
-# Game Mechanics Showcase:
-
-## SuperHot
-
-A Unity recreation of **SuperHot’s** core concept — where *time only moves when you move*. Rebuilt with focus on time manipulation and cinematic combat replay to capture the original’s “time as a weapon” experience.
-
-![](./Assets/SuperHot.gif)
-
-### Upcoming Plans
-
-- [ ] 2–4 player online support with synchronized time flow.
-- [ ] Cooperative missions and competitive tactical modes.
-
-## Bomber
-
-A physics-based platformer where you **are** the bomb — using explosive recoil to jump, double-jump, and blast through obstacles. Inspired by **Öoom**.
-
-![](./Assets/Bomber.gif)
-
-### Upcoming Plans
-
-- [ ] Explosive obstacle destruction mechanics.
-- [ ] Expanded level design with chain-reaction puzzles.
-
-## Minecraft
-
-A reimagining of **Minecraft’s** procedural world generation, powered by **Perlin Noise**. Faithfully reproduces its chunk-based terrain system while optimizing generation logic for performance.
-
-![](./Assets/MC.png)
-
-### Upcoming Plans
-
-- [ ] Parallelized terrain generation.
-- [ ] Chunk-based loading and streaming.
-- [ ] Implementation of specific block types and properties.
-
 # 🎮 Game Mechanics Showcase
 
 > A collection of Unity-based gameplay prototypes exploring unique core mechanics in modern game design.
@@ -112,3 +76,79 @@ Faithfully reproduces its **chunk-based terrain system** while optimizing genera
 **Email:** [your@email.com]
 
 > _“Play is the highest form of research.” – Albert Einstein_
+
+
+# 🎮 Game Mechanics Showcase
+
+Exploring the art of **game mechanics** — each project focuses on a single innovative system that defines the player experience.  
+All prototypes are built in **Unity**, emphasizing creativity, responsiveness, and design clarity.
+
+---
+
+## 🕒 SuperHot – *Time Moves When You Move*
+
+![SuperHot Demo](./Assets/SuperHot.gif)
+
+A faithful recreation of **SuperHot’s** signature time manipulation gameplay.  
+Here, movement equals time — the world freezes until the player acts. Every motion, every bullet, every dodge becomes a deliberate tactical choice.
+
+**Highlights**
+- Dynamic “bullet-time” simulation  
+- Replay system that captures player motion for cinematic playback  
+- Built entirely in Unity using custom motion and time control logic  
+
+**In Progress**
+- Multiplayer mode with synchronized time flow  
+- Cooperative missions and competitive tactical battles  
+
+---
+
+## 💣 Bomber – *Be the Explosion*
+
+![Bomber Demo](./Assets/Bomber.gif)
+
+In this prototype, the player **is the bomb** — using controlled explosions as propulsion.  
+Each detonation is both a weapon and a movement mechanic, creating a rhythm-based, physics-driven platformer.
+
+**Highlights**
+- Explosion recoil as a movement system  
+- Diagonal leap and double-jump mechanics  
+- Physics-based traversal design  
+
+**In Progress**
+- Environmental destruction  
+- Chain-reaction puzzles and level design  
+
+---
+
+## 🌍 Minecraft Recreation – *Procedural Worlds, Reimagined*
+
+![Minecraft Demo](./Assets/MC.png)
+
+A deep dive into **procedural generation** inspired by Minecraft’s terrain system.  
+This project rebuilds the world generation pipeline from the ground up using **Perlin Noise**, optimized for real-time performance and modularity.
+
+**Highlights**
+- 2D & 3D Perlin noise terrain generation  
+- Real-time mesh construction  
+- Chunk streaming and dynamic loading  
+
+**In Progress**
+- Multi-threaded terrain generation  
+- Custom block data and material properties  
+
+---
+
+## 🧠 Tools & Tech
+- **Engine:** Unity (URP)  
+- **Language:** C#  
+- **Frameworks:** DOTS, Cinemachine  
+- **Focus:** Gameplay prototyping, system design, player feedback  
+
+---
+
+## 👋 About Me
+I’m a gameplay designer and programmer exploring how **mechanics shape emotion and strategy**.  
+From slow-motion combat to self-propelled explosions, every prototype here tests a new idea in **player control and feedback**.
+
+[🌐 Portfolio Website](your-portfolio-link.com) • [🐙 GitHub](your-github-link) • [✉️ Contact Me](mailto:your@email.com)

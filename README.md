@@ -14,7 +14,9 @@
 A Unity recreation of **SuperHot’s** core experience — where **time only moves when you move**.  
 Rebuilt from scratch to replicate its **time manipulation** and **combat replay** mechanics, delivering the signature “time as a weapon” tactical shooter experience.
 
-![Demo](./Assets/SuperHot.gif)
+<p align="center">
+  <img src="./Assets/SuperHot.gif" alt="SuperHot" width="400">
+</p>
 
 ### 🧩 Core Features
 - Time-based motion control  
@@ -31,7 +33,9 @@ Rebuilt from scratch to replicate its **time manipulation** and **combat replay*
 
 A physics-based platformer where you **are the bomb** — using explosive recoil to **jump**, **double-jump**, and **propel** yourself through the level.
 
-![](./Assets/Bomber.gif)
+<p align="center">
+  <img src="./Assets/Bomber.gif" alt="Bomber" width="400">
+</p>
 
 ### 🧩 Core Features
 - Explosion-driven movement system  
@@ -48,7 +52,9 @@ A physics-based platformer where you **are the bomb** — using explosive recoil
 A reimagining of **Minecraft’s** procedural world generation powered by **Perlin Noise**.  
 Faithfully reproduces its **chunk-based terrain system** while optimizing generation logic for performance and scalability.
 
-![](./Assets/MC.png)
+<p align="center">
+  <img src="./Assets/MC.png" alt="Minecraft" width="400">
+</p>
 
 ### 🧩 Core Features
 - Procedural terrain via 2D/3D Perlin noise  

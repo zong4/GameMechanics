@@ -24,7 +24,7 @@ namespace Network
 
         private void Update()
         {
-            if (_roomList == _networkManager.roomInfos)
+            if (_roomList == _networkManager.roomInfos && _roomEntries.Count > 0)
                 return;
             _roomList = _networkManager.roomInfos;
 

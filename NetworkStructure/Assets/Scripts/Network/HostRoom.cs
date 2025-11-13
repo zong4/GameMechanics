@@ -36,9 +36,6 @@ namespace Network
                 IsOpen = true
             };
             PhotonNetwork.CreateRoom(roomNameInputField.text, roomOptions);
-            PhotonNetwork.LoadLevel("Room");
-            Debug.Log(
-                $"Hosting room with name {roomNameInputField.text}, MaxPlayers: {maxPlayers}, IsVisible: {isVisible}");
         }
     }
 }

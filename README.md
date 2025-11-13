@@ -7,8 +7,6 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Status](https://img.shields.io/badge/Build-Playable_Prototypes-blue)]()
 
----
-
 ## 🕒 SuperHot Recreation
 
 A Unity recreation of **SuperHot’s** core experience — where **time only moves when you move**.  
@@ -26,8 +24,6 @@ Rebuilt from scratch to replicate its **time manipulation** and **combat replay*
 ### 🛠️ Upcoming Plans
 - [ ] 2–4 player online mode with synchronized time flow  
 - [ ] Cooperative and competitive tactical missions  
-
----
 
 ## 💣 Bomber
 
@@ -108,19 +104,14 @@ Design your own **attraction matrix**, spawn colorful particles, and watch emerg
 - [ ] Improved UI and extended customization options  
 - [ ] 3D particle support  
 
----
-
 ## 🧠 Tech Stack
-- **Engine:** Unity (URP)  
+- **Engine:** Unity   
 - **Language:** C#  
-- **Frameworks:** DOTS  
-- **Focus:** Gameplay prototyping, procedural systems, player feedback  
-
----
+- **Frameworks:** DOTS
 
 ## 📬 Contact
+
 **Author:** [Zong](https://github.com/zong4)    
 **Portfolio:** [zong4.github.io](https://zong4.github.io)   
 **Email:** [zzoonng@163.com](mailto:zzoonng@163.com)    
 
-> _“Play is the highest form of research.” – Albert Einstein_

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class PuzzleGenerator2 : MonoBehaviour
+public class PuzzleGenerator3 : MonoBehaviour
 {
     public int gridSize = 3;
     public float nodeSize = 0.2f;

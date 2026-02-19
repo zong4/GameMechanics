@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class PuzzleGenerator3 : MonoBehaviour
+public class PuzzleGenerator4 : MonoBehaviour
 {
     public int gridSize = 3;
     public float nodeSize = 0.2f;
@@ -15,6 +15,8 @@ public class PuzzleGenerator3 : MonoBehaviour
     public GameObject cellPrefab;
     public GameObject whiteCellPrefab;
     public GameObject blackCellPrefab;
+    private bool _showSolution = false;
+    private LineRenderer _lineRenderer;
     private Camera _camera;
     
     // Puzzle
@@ -31,6 +33,11 @@ public class PuzzleGenerator3 : MonoBehaviour
     public Vector2Int StartPosition => _startPosition;
     public Vector3 Center => new Vector3((gridSize - 1) * 0.5f, (gridSize - 1) * 0.5f, 0f);
     
+    private void Awake()
+    {
+        _lineRenderer = GetComponent<LineRenderer>();
+    }
+    
     private void Start()
     {
         _camera = Camera.main;
@@ -40,15 +47,18 @@ public class PuzzleGenerator3 : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.R))
-        {
-            foreach (Transform child in transform)
-                Destroy(child.gameObject);
             GeneratePuzzle();
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            _showSolution = !_showSolution;
+            RenderSolution();
         }
     }
 
     public void GeneratePuzzle()
     {
+        foreach (Transform child in transform)
+            Destroy(child.gameObject);
         GenerateSolution();
         RenderPuzzle();
         puzzleBoard.transform.localScale = new Vector3(gridSize + nodeSize, gridSize + nodeSize, 1f);
@@ -234,6 +244,25 @@ public class PuzzleGenerator3 : MonoBehaviour
             }
         }
     }
+
+    private void RenderSolution()
+    {
+        if (!_showSolution)
+        {             
+            _lineRenderer.positionCount = 0;
+        }
+        else
+        {
+            _lineRenderer.positionCount = _solutionPath.Count;
+            _lineRenderer.startWidth = 0.1f;
+            _lineRenderer.endWidth = 0.1f;
+            for (var i = 0; i < _solutionPath.Count; i++)
+            {
+                var cellPosition = new Vector3(_solutionPath[i].x - 0.5f, _solutionPath[i].y - 0.5f, -1f) - Center;
+                _lineRenderer.SetPosition(i, cellPosition);
+            }
+        }
+    }
     
     private bool IsConnectRegions(List<Vector2Int> region1, List<Vector2Int> region2)
     {
@@ -251,46 +280,68 @@ public class PuzzleGenerator3 : MonoBehaviour
     private void AddWhiteBlackCells()
     {
         // First region is always white
-        var cnt = difficulty + 1;
-        for (var i = 0; i < cnt; i++)
-        {
-            var cell = _solutionRegions[0][Random.Range(0, _solutionRegions[0].Count)];
-            if (!_whiteCells.Contains(cell))
-                _whiteCells.Add(cell);
-        }
-        
-        // Other regions can be either white or black, but must follow the rule that connected regions have different colors
+        var availableWhiteCells = new List<Vector2Int>(_solutionRegions[0]);
+        var availableBlackCells = new List<Vector2Int>();
         for (var i = 1; i < _solutionRegions.Count; i++)
         {
             if (IsConnectRegions(_solutionRegions[0], _solutionRegions[i]))
-            {
-                for (var j = 0; j < cnt; j++)
-                {
-                    var cell = _solutionRegions[i][Random.Range(0, _solutionRegions[i].Count)];
-                    if (!_blackCells.Contains(cell))
-                        _blackCells.Add(cell);
-                }
-            }
+                availableBlackCells.AddRange(_solutionRegions[i]);
             else
+                availableWhiteCells.AddRange(_solutionRegions[i]);
+        }
+        
+        // Add white cells
+        var minDistance = Mathf.Lerp(1f, gridSize / 2f, (difficulty - 1f) / 4f); 
+        _whiteCells.Clear();
+        for (var k = 0; k < gridSize + difficulty; k++)
+        {
+            Vector2Int chosen;
+            var attempts = 0;
+            if (availableWhiteCells.Count == 0)
+                break;
+            do
             {
-                for (var j = 0; j < cnt; j++)
-                {
-                    var cell = _solutionRegions[i][Random.Range(0, _solutionRegions[i].Count)];
-                    if (!_whiteCells.Contains(cell))
-                        _whiteCells.Add(cell);
-                }
-            }
+                chosen = availableWhiteCells[Random.Range(0, availableWhiteCells.Count)];
+                attempts++;
+            } while (_whiteCells.Exists(c => Vector2Int.Distance(c, chosen) < minDistance) && attempts < 10);
+            _whiteCells.Add(chosen);
+            availableWhiteCells.Remove(chosen);
+        }
+
+        // Add black cells
+        _blackCells.Clear();
+        for (var k = 0; k < gridSize + difficulty; k++)
+        {
+            Vector2Int chosen;
+            var attempts = 0;
+            if (availableBlackCells.Count == 0)
+                break;
+            do
+            {
+                chosen = availableBlackCells[Random.Range(0, availableBlackCells.Count)];
+                attempts++;
+            } while (_blackCells.Exists(c => Vector2Int.Distance(c, chosen) < minDistance) && attempts < 10);
+            _blackCells.Add(chosen);
+            availableBlackCells.Remove(chosen);
         }
     }
     
     private void AddRequiredDots()
     {
-        var cnt = difficulty + 1;
-        for (var i = 0; i < cnt; i++)
+        var minDistance = Mathf.Lerp(1f, _solutionPath.Count / 2f, (difficulty - 1f) / 4f);
+        _requiredDots.Clear();
+        for (var k = 0; k < gridSize + difficulty; k++)
         {
-            var cell = _solutionPath[Random.Range(0, _solutionPath.Count)];
-            if (!_requiredDots.Contains(cell))
-                _requiredDots.Add(cell);
+            Vector2Int chosen;
+            var attempts = 0;
+            if (_solutionPath.Count == 0)
+                break;
+            do
+            {
+                chosen = _solutionPath[Random.Range(0, _solutionPath.Count)];
+                attempts++;
+            } while (_requiredDots.Exists(c => Vector2Int.Distance(c, chosen) < minDistance) && attempts < 10);
+            _requiredDots.Add(chosen);
         }
     }
     

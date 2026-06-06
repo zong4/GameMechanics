@@ -1,3 +1,11 @@
+
+# UE
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+
 Temp/
 .vsconfig
 

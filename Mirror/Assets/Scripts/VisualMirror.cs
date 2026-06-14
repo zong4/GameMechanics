@@ -3,20 +3,118 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class VisualMirror : MonoBehaviour
 {
-    public Camera mainCam;
-    public Camera mirrorCam;
+    [Header("Setup")] public Camera mainCam;
+    public Camera mirrorCamPrefab; // mirror camera 的 prefab/模板
+    public Material mirrorMaterial; // 镜子材质模板，脚本会基于它创建一份实例
 
-    private void Awake()
+    [Header("Render Texture Settings")] public int rtWidth = 1024;
+    public int rtHeight = 1024;
+    public int rtDepth = 24;
+
+    [Header("Debug")] public bool drawFrustumDebug;
+
+    private Camera _mirrorCam;
+    private RenderTexture _mirrorRT;
+    private Material _instancedMat;
+
+    private void OnEnable()
     {
-        // 因为反射会导致左右镜像翻转（手性改变），这里通过翻转贴图的 U 方向来纠正，使镜子里的画面左右关系正确
-        var mat = GetComponent<Renderer>().sharedMaterial;
-        mat.mainTextureScale = new Vector2(-1, 1);
-        mat.mainTextureOffset = new Vector2(1, 0);
+        ResolveMainCamera();
+        SetupMirrorCamera();
+        SetupRenderTexture();
+        SetupMaterial();
+    }
+
+    private void OnDisable()
+    {
+        Cleanup();
+    }
+
+    // 如果没有手动指定 mainCam，默认使用场景主摄像机
+    private void ResolveMainCamera()
+    {
+        if (mainCam != null) return;
+        mainCam = Camera.main;
+        if (mainCam == null) Debug.LogWarning($"[{name}] 未指定 mainCam，且场景中没有 tag 为 MainCamera 的摄像机", this);
+    }
+
+    private void SetupMirrorCamera()
+    {
+        if (transform.childCount > 0)
+        {
+            _mirrorCam = transform.GetChild(0).GetComponent<Camera>();
+            if (_mirrorCam != null) _mirrorCam.enabled = false;
+            return;
+        }
+
+        _mirrorCam = Instantiate(mirrorCamPrefab, transform);
+        _mirrorCam.name = $"{name}_MirrorCam";
+        _mirrorCam.enabled = false;
+    }
+
+    private void SetupRenderTexture()
+    {
+        if (_mirrorRT != null) return;
+        _mirrorRT = new RenderTexture(rtWidth, rtHeight, rtDepth)
+        {
+            name = $"{name}_MirrorRT",
+            antiAliasing = 2,
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Trilinear
+        };
+        _mirrorRT.Create();
+        if (_mirrorCam != null) _mirrorCam.targetTexture = _mirrorRT;
+    }
+
+    // 基于输入的 mirrorMaterial 创建一份实例，赋给本镜子的 Renderer
+    private void SetupMaterial()
+    {
+        var rendererComp = GetComponent<Renderer>();
+        if (rendererComp == null) return;
+        if (mirrorMaterial == null)
+        {
+            Debug.LogWarning($"[{name}] 未指定 mirrorMaterial，无法创建镜面材质", this);
+            return;
+        }
+
+        _instancedMat = new Material(mirrorMaterial)
+        {
+            name = $"{name}_MirrorMat",
+            mainTextureScale = new Vector2(-1, 1), // 因为反射会导致左右镜像翻转（手性改变），翻转贴图 U 方向纠正左右关系
+            mainTextureOffset = new Vector2(1, 0),
+            mainTexture = _mirrorRT
+        };
+        rendererComp.material = _instancedMat;
+    }
+
+    private void Cleanup()
+    {
+        if (_mirrorCam != null)
+        {
+            if (Application.isPlaying) Destroy(_mirrorCam.gameObject);
+            else DestroyImmediate(_mirrorCam.gameObject);
+            _mirrorCam = null;
+        }
+
+        if (_mirrorRT != null)
+        {
+            _mirrorRT.Release();
+            if (Application.isPlaying) Destroy(_mirrorRT);
+            else DestroyImmediate(_mirrorRT);
+            _mirrorRT = null;
+        }
+
+        if (_instancedMat != null)
+        {
+            if (Application.isPlaying) Destroy(_instancedMat);
+            else DestroyImmediate(_instancedMat);
+            _instancedMat = null;
+        }
     }
 
     private void LateUpdate()
     {
-        if (!mainCam || !mirrorCam) return;
+        if (!mainCam || !_mirrorCam || !_mirrorRT) return;
 
         // 镜子的位置和法线方向（forward 必须朝向摄像机所在的一侧）
         var n = transform.forward;
@@ -25,10 +123,10 @@ public class VisualMirror : MonoBehaviour
         // ===== 1. 计算镜中相机的位置 =====
         var inDir = p - mainCam.transform.position;
         var outDir = Vector3.Reflect(inDir, n);
-        mirrorCam.transform.position = p - outDir;
+        _mirrorCam.transform.position = p - outDir;
 
         // ===== 2. 计算镜中相机的朝向 =====
-        mirrorCam.transform.rotation =
+        _mirrorCam.transform.rotation =
             Quaternion.LookRotation(
                 Vector3.Reflect(mainCam.transform.forward, n),
                 Vector3.Reflect(mainCam.transform.up, n)
@@ -38,9 +136,8 @@ public class VisualMirror : MonoBehaviour
         SetAsymmetricFrustum();
 
         // ===== 4. 渲染到 RenderTexture =====
-        mirrorCam.Render();
-        mirrorCam.ResetProjectionMatrix();
-        Debug.DrawRay(transform.position, transform.forward * 2, Color.green);
+        _mirrorCam.Render();
+        _mirrorCam.ResetProjectionMatrix();
     }
 
     private void SetAsymmetricFrustum()
@@ -59,7 +156,7 @@ public class VisualMirror : MonoBehaviour
         var worldTR = transform.TransformPoint(localTR);
 
         // --- 转换到 mirrorCam 的相机空间 ---
-        var worldToCam = mirrorCam.worldToCameraMatrix;
+        var worldToCam = _mirrorCam.worldToCameraMatrix;
         var camBL = worldToCam.MultiplyPoint(worldBL);
         var camBR = worldToCam.MultiplyPoint(worldBR);
         var camTL = worldToCam.MultiplyPoint(worldTL);
@@ -67,9 +164,9 @@ public class VisualMirror : MonoBehaviour
 
         // --- 确定 near/far 平面距离 ---
         // near 取四个角点到相机距离与原始 nearClipPlane 中的最小值的最大值，确保 near 面不会切穿镜面本身
-        var near = Mathf.Max(mirrorCam.nearClipPlane,
+        var near = Mathf.Min(_mirrorCam.nearClipPlane,
             Mathf.Min(-camBL.z, -camBR.z, -camTL.z, -camTR.z)); //相机空间中，相机正前方的点 z 为负值
-        var far = mirrorCam.farClipPlane;
+        var far = _mirrorCam.farClipPlane;
 
         // --- 将四个角点投影到 near 平面上 ---
         // 透视投影下，点 (x,y,z) 投影到距离为 near 的平面上时，屏幕坐标按比例 near/(-z) 缩放
@@ -90,11 +187,11 @@ public class VisualMirror : MonoBehaviour
         var top = Mathf.Max(nearBL.y, Mathf.Max(nearBR.y, Mathf.Max(nearTL.y, nearTR.y)));
 
         // 用同一个 worldToCam 的精确逆来画 debug 视锥体，保证和角点计算一致
-        DrawFrustumDebug(worldToCam, left, right, bottom, top, near, far);
+        if (drawFrustumDebug) DrawFrustumDebug(worldToCam, left, right, bottom, top, near, far);
 
         // --- 构造非对称透视投影矩阵并应用 ---
         var proj = PerspectiveOffCenter(left, right, bottom, top, near, far);
-        mirrorCam.projectionMatrix = proj;
+        _mirrorCam.projectionMatrix = proj;
     }
 
     // 把非对称视锥体的 near/far 平面边界，以及四条侧边线，画在 Scene 视图中

@@ -1,5 +1,88 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6144871459784490673
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4853163638152190766}
+  - component: {fileID: 4756779273554755852}
+  m_Layer: 0
+  m_Name: VisualMirror_MirrorCam
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4853163638152190766
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6144871459784490673}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.97639036, z: 0, w: -0.2160135}
+  m_LocalPosition: {x: -1.203, y: 0.67, z: 3.0349998}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3533855480935267757}
+  m_LocalEulerAnglesHint: {x: -0.04, y: -180, z: 0}
+--- !u!20 &4756779273554755852
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6144871459784490673}
+  m_Enabled: 0
+  serializedVersion: 2
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: -1
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 55
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
 --- !u!1 &7073906274796957606
 GameObject:
   m_ObjectHideFlags: 0
@@ -32,7 +115,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 0.1}
   m_ConstrainProportionsScale: 1
-  m_Children: []
+  m_Children:
+  - {fileID: 4853163638152190766}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!33 &766098835587310841
@@ -120,8 +204,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainCam: {fileID: 0}
   mirrorCamPrefab: {fileID: 9124174916488370216, guid: 5db789bf44fd8f84aa8c72997c51bec2, type: 3}
-  mirrorMaterial: {fileID: 2100000, guid: 97eccde8e0afb3042aa1e0a4b3b78fc3, type: 2}
+  mirrorMatTemplate: {fileID: 2100000, guid: 97eccde8e0afb3042aa1e0a4b3b78fc3, type: 2}
+  mirrorDeadZoneMat: {fileID: 2100000, guid: 5e16aa42362fb4d45873c24e835614ad, type: 2}
   rtWidth: 1024
   rtHeight: 1024
   rtDepth: 24
-  drawFrustumDebug: 0
+  useDeadZone: 1
+  useDeadZoneWhenMainCameraCannotSeeMirror: 1
+  requireFrontSide: 1
+  minActiveDistance: 0.8
+  minActiveDistanceExit: 1
+  maxActiveDistance: 12
+  maxActiveDistanceExit: 11
+  maxViewAngle: 45
+  maxViewAngleExit: 40
+  showDebugInfo: 0
+  viewState: 1
+  deadZoneReason: Camera is too close
+  mainCamDirs: []
+  mirrorCamDirs: []
+  frustumFitMode: 2

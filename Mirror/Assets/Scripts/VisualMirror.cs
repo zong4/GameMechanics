@@ -32,10 +32,20 @@ public class VisualMirror : MonoBehaviour
     public float maxViewAngle = 45f;
     public float maxViewAngleExit = 40f;
 
+    [Header("Frustum Fit Mode")]
+    public FrustumFitMode frustumFitMode = FrustumFitMode.Fit;
+
     private Camera _mirrorCam;
     private RenderTexture _mirrorRT;
     private Material _mirrorInstancedMat;
     private Renderer _mirrorRenderer;
+
+    public enum FrustumFitMode
+    {
+        Contain, // 包含四个角点，保证镜面完全覆盖，但可能有部分镜面未被渲染
+        Fit, // 刚好适合四个角点，可能有部分镜面未覆盖
+        Average // 对四个角点求平均值，可能有部分镜面未覆盖
+    }
 
     private void OnEnable()
     {
@@ -136,10 +146,10 @@ public class VisualMirror : MonoBehaviour
 
     [Header("Debug Info")]
     public bool showDebugInfo;
-    public MirrorViewState viewState = MirrorViewState.DeadZone;
-    public string deadZoneReason = "Initializing";
-    public List<Vector3> mainCamDirs = new();
-    public List<Vector3> mirrorCamDirs = new();
+    [SerializeField] [ReadOnly] public MirrorViewState viewState = MirrorViewState.DeadZone;
+    [SerializeField] [ReadOnly] public string deadZoneReason = "Initializing";
+    [SerializeField] [ReadOnly] public List<Vector3> mainCamDirs = new();
+    [SerializeField] [ReadOnly] public List<Vector3> mirrorCamDirs = new();
 
     private void LateUpdate()
     {
@@ -268,15 +278,6 @@ public class VisualMirror : MonoBehaviour
         _mirrorRenderer.sharedMaterial = mirrorDeadZoneMat;
     }
 
-    public enum FrustumFitMode
-    {
-        Default, // 对完整的四个角点求 AABB 包围盒，保证完全覆盖但可能有多余渲染
-        Contain, // 每次只对边上的两个点求边界，保证完全覆盖但可能有多余渲染
-        Fit // 刚好适合四个角点，可能有部分镜面未覆盖
-    }
-
-    public FrustumFitMode frustumFitMode = FrustumFitMode.Fit;
-
     private void SetAsymmetricFrustum()
     {
         // --- 镜面在 Cube 本地空间中的四个角点 ---
@@ -325,12 +326,12 @@ public class VisualMirror : MonoBehaviour
         float left, right, bottom, top;
         switch (frustumFitMode)
         {
-            case FrustumFitMode.Default:
-                left = Mathf.Min(nearBL.x, Mathf.Min(nearBR.x, Mathf.Min(nearTL.x, nearTR.x)));
-                right = Mathf.Max(nearBL.x, Mathf.Max(nearBR.x, Mathf.Max(nearTL.x, nearTR.x)));
-                bottom = Mathf.Min(nearBL.y, Mathf.Min(nearBR.y, Mathf.Min(nearTL.y, nearTR.y)));
-                top = Mathf.Max(nearBL.y, Mathf.Max(nearBR.y, Mathf.Max(nearTL.y, nearTR.y)));
-                break;
+            // case FrustumFitMode.Default:
+            //     left = Mathf.Min(nearBL.x, Mathf.Min(nearBR.x, Mathf.Min(nearTL.x, nearTR.x)));
+            //     right = Mathf.Max(nearBL.x, Mathf.Max(nearBR.x, Mathf.Max(nearTL.x, nearTR.x)));
+            //     bottom = Mathf.Min(nearBL.y, Mathf.Min(nearBR.y, Mathf.Min(nearTL.y, nearTR.y)));
+            //     top = Mathf.Max(nearBL.y, Mathf.Max(nearBR.y, Mathf.Max(nearTL.y, nearTR.y)));
+            //     break;
             case FrustumFitMode.Contain:
                 left = Mathf.Min(nearBL.x, nearTL.x);
                 right = Mathf.Max(nearBR.x, nearTR.x);
@@ -342,6 +343,12 @@ public class VisualMirror : MonoBehaviour
                 right = Mathf.Min(nearBR.x, nearTR.x);
                 bottom = Mathf.Max(nearBL.y, nearBR.y);
                 top = Mathf.Min(nearTL.y, nearTR.y);
+                break;
+            case FrustumFitMode.Average:
+                left = (nearBL.x + nearTL.x) * 0.5f;
+                right = (nearBR.x + nearTR.x) * 0.5f;
+                bottom = (nearBL.y + nearBR.y) * 0.5f;
+                top = (nearTL.y + nearTR.y) * 0.5f;
                 break;
             default:
                 left = right = bottom = top = 0;

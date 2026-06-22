@@ -25,8 +25,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6144871459784490673}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.97639036, z: 0, w: -0.2160135}
-  m_LocalPosition: {x: -1.203, y: 0.67, z: 3.0349998}
+  m_LocalRotation: {x: -0, y: -0.5328763, z: -0, w: 0.84619325}
+  m_LocalPosition: {x: 1.2075, y: -0.06299999, z: -13.459999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -147,7 +147,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 97eccde8e0afb3042aa1e0a4b3b78fc3, type: 2}
+  - {fileID: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -206,10 +206,14 @@ MonoBehaviour:
   mirrorCamPrefab: {fileID: 9124174916488370216, guid: 5db789bf44fd8f84aa8c72997c51bec2, type: 3}
   mirrorMatTemplate: {fileID: 2100000, guid: 97eccde8e0afb3042aa1e0a4b3b78fc3, type: 2}
   mirrorDeadZoneMat: {fileID: 2100000, guid: 5e16aa42362fb4d45873c24e835614ad, type: 2}
+  samplingMode: 0
+  screenSpaceShader: {fileID: 4800000, guid: 9dd7a91db9b34a64fa6547a7a6d59e48, type: 3}
+  screenSpaceFlipX: 1
+  screenSpaceFlipY: 0
   rtWidth: 1024
   rtHeight: 1024
   rtDepth: 24
-  useDeadZone: 1
+  useDeadZone: 0
   useDeadZoneWhenMainCameraCannotSeeMirror: 1
   requireFrontSide: 1
   minActiveDistance: 0.8
@@ -218,9 +222,15 @@ MonoBehaviour:
   maxActiveDistanceExit: 11
   maxViewAngle: 45
   maxViewAngleExit: 40
-  showDebugInfo: 0
-  viewState: 1
-  deadZoneReason: Camera is too close
-  mainCamDirs: []
-  mirrorCamDirs: []
   frustumFitMode: 2
+  showDebugInfo: 0
+  viewState: 0
+  deadZoneReason: 
+  mainCamDirs:
+  - {x: 0.902, y: 0, z: 0.432}
+  - {x: 0, y: 1, z: 0}
+  - {x: 0.432, y: 0, z: -0.902}
+  mirrorCamDirs:
+  - {x: 0.902, y: 0, z: -0.432}
+  - {x: 0, y: 1, z: -0}
+  - {x: -0.432, y: 0, z: -0.902}

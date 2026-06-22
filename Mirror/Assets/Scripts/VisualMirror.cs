@@ -16,6 +16,12 @@ public class VisualMirror : MonoBehaviour
     public Material mirrorMatTemplate;
     public Material mirrorDeadZoneMat;
 
+    [Header("Sampling Mode")]
+    public MirrorSamplingMode samplingMode = MirrorSamplingMode.AsymmetricFrustum;
+    public Shader screenSpaceShader;
+    public bool screenSpaceFlipX = true;
+    public bool screenSpaceFlipY;
+
     [Header("Render Texture")]
     public int rtWidth = 1024;
     public int rtHeight = 1024;
@@ -38,13 +44,21 @@ public class VisualMirror : MonoBehaviour
     private Camera _mirrorCam;
     private RenderTexture _mirrorRT;
     private Material _mirrorInstancedMat;
+    private Material _screenSpaceInstancedMat;
     private Renderer _mirrorRenderer;
+    private const string ScreenSpaceShaderName = "Mirror/ScreenSpaceUV";
 
     public enum FrustumFitMode
     {
         Contain, // 包含四个角点，保证镜面完全覆盖，但可能有部分镜面未被渲染
         Fit, // 刚好适合四个角点，可能有部分镜面未覆盖
         Average // 对四个角点求平均值，可能有部分镜面未覆盖
+    }
+
+    public enum MirrorSamplingMode
+    {
+        AsymmetricFrustum,
+        ScreenSpaceUV
     }
 
     private void OnEnable()
@@ -109,7 +123,20 @@ public class VisualMirror : MonoBehaviour
             mainTexture = _mirrorRT
         };
 
+        SetupScreenSpaceMaterial();
         ApplyDeadZoneMaterial();
+    }
+
+    private void SetupScreenSpaceMaterial()
+    {
+        var shader = screenSpaceShader ? screenSpaceShader : Shader.Find(ScreenSpaceShaderName);
+        if (!shader) return;
+
+        _screenSpaceInstancedMat = new Material(shader)
+        {
+            name = $"{name}_ScreenSpaceMirrorMat", mainTexture = _mirrorRT
+        };
+        ApplyScreenSpaceMaterialSettings();
     }
 
     private void Cleanup()
@@ -134,6 +161,13 @@ public class VisualMirror : MonoBehaviour
             if (Application.isPlaying) Destroy(_mirrorInstancedMat);
             else DestroyImmediate(_mirrorInstancedMat);
             _mirrorInstancedMat = null;
+        }
+
+        if (_screenSpaceInstancedMat)
+        {
+            if (Application.isPlaying) Destroy(_screenSpaceInstancedMat);
+            else DestroyImmediate(_screenSpaceInstancedMat);
+            _screenSpaceInstancedMat = null;
         }
     }
 
@@ -191,8 +225,9 @@ public class VisualMirror : MonoBehaviour
             Math.RoundVector3(_mirrorCam.transform.right)
         };
 
-        // ===== 4. 计算非对称视锥体，使渲染范围精确对应镜面 =====
-        SetAsymmetricFrustum();
+        // ===== 4. 根据采样模式决定由相机裁剪，还是由屏幕空间 UV 裁剪 =====
+        if (samplingMode == MirrorSamplingMode.AsymmetricFrustum) SetAsymmetricFrustum();
+        else ApplyMainCameraProjectionToMirrorCamera();
 
         // ===== 5. 渲染到 RenderTexture =====
         _mirrorCam.Render();
@@ -268,14 +303,55 @@ public class VisualMirror : MonoBehaviour
 
     private void ApplyMirrorMaterial()
     {
-        if (!_mirrorRenderer || !_mirrorInstancedMat) return;
-        if (_mirrorRenderer.sharedMaterial == _mirrorInstancedMat) return;
-        _mirrorRenderer.sharedMaterial = _mirrorInstancedMat;
+        if (!_mirrorRenderer) return;
+
+        var material = GetActiveMirrorMaterial();
+        if (!material) return;
+        if (_mirrorRenderer.sharedMaterial == material) return;
+        _mirrorRenderer.sharedMaterial = material;
     }
 
     private void ApplyDeadZoneMaterial()
     {
+        if (!_mirrorRenderer || !mirrorDeadZoneMat) return;
         _mirrorRenderer.sharedMaterial = mirrorDeadZoneMat;
+    }
+
+    private Material GetActiveMirrorMaterial()
+    {
+        if (samplingMode == MirrorSamplingMode.ScreenSpaceUV)
+        {
+            if (!_screenSpaceInstancedMat) SetupScreenSpaceMaterial();
+            if (_screenSpaceInstancedMat)
+            {
+                _screenSpaceInstancedMat.mainTexture = _mirrorRT;
+                ApplyScreenSpaceMaterialSettings();
+                return _screenSpaceInstancedMat;
+            }
+
+            Debug.LogWarning($"[{name}] 未找到 {ScreenSpaceShaderName} Shader，回退到非对称视锥模式", this);
+        }
+
+        if (_mirrorInstancedMat) _mirrorInstancedMat.mainTexture = _mirrorRT;
+        return _mirrorInstancedMat;
+    }
+
+    private void ApplyScreenSpaceMaterialSettings()
+    {
+        if (!_screenSpaceInstancedMat) return;
+        _screenSpaceInstancedMat.SetFloat("_FlipX", screenSpaceFlipX ? 1f : 0f);
+        _screenSpaceInstancedMat.SetFloat("_FlipY", screenSpaceFlipY ? 1f : 0f);
+    }
+
+    private void ApplyMainCameraProjectionToMirrorCamera()
+    {
+        _mirrorCam.ResetProjectionMatrix();
+        _mirrorCam.nearClipPlane = mainCam.nearClipPlane;
+        _mirrorCam.farClipPlane = mainCam.farClipPlane;
+        _mirrorCam.orthographic = mainCam.orthographic;
+        _mirrorCam.orthographicSize = mainCam.orthographicSize;
+        _mirrorCam.fieldOfView = mainCam.fieldOfView;
+        _mirrorCam.projectionMatrix = mainCam.projectionMatrix;
     }
 
     private void SetAsymmetricFrustum()

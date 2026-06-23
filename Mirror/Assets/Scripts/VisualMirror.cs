@@ -17,7 +17,7 @@ public class VisualMirror : MonoBehaviour
     public Material mirrorDeadZoneMat;
 
     [Header("Sampling Mode")]
-    public MirrorSamplingMode samplingMode = MirrorSamplingMode.AsymmetricFrustum;
+    public MirrorSamplingMode samplingMode = MirrorSamplingMode.ScreenSpaceUV;
     public Shader screenSpaceShader;
     public bool screenSpaceFlipX = true;
     public bool screenSpaceFlipY;
@@ -28,18 +28,8 @@ public class VisualMirror : MonoBehaviour
     public int rtDepth = 24;
 
     [Header("Dead Zone")]
-    public bool useDeadZone = true;
     public bool useDeadZoneWhenMainCameraCannotSeeMirror = true;
     public bool requireFrontSide = true;
-    public float minActiveDistance = 0.8f;
-    public float minActiveDistanceExit = 1.0f;
-    public float maxActiveDistance = 12f;
-    public float maxActiveDistanceExit = 11f;
-    public float maxViewAngle = 45f;
-    public float maxViewAngleExit = 40f;
-
-    [Header("Frustum Fit Mode")]
-    public FrustumFitMode frustumFitMode = FrustumFitMode.Fit;
 
     private Camera _mirrorCam;
     private RenderTexture _mirrorRT;
@@ -47,13 +37,8 @@ public class VisualMirror : MonoBehaviour
     private Material _screenSpaceInstancedMat;
     private Renderer _mirrorRenderer;
     private const string ScreenSpaceShaderName = "Mirror/ScreenSpaceUV";
-
-    public enum FrustumFitMode
-    {
-        Contain, // 包含四个角点，保证镜面完全覆盖，但可能有部分镜面未被渲染
-        Fit, // 刚好适合四个角点，可能有部分镜面未覆盖
-        Average // 对四个角点求平均值，可能有部分镜面未覆盖
-    }
+    private readonly LayerMask _visibleMirrorLayer = LayerMask.NameToLayer("Default");
+    private readonly LayerMask _mirrorIgnoreLayer = LayerMask.NameToLayer("Mirror");
 
     public enum MirrorSamplingMode
     {
@@ -230,8 +215,16 @@ public class VisualMirror : MonoBehaviour
         else ApplyMainCameraProjectionToMirrorCamera();
 
         // ===== 5. 渲染到 RenderTexture =====
-        _mirrorCam.Render();
+        RenderMirrorCamera();
         _mirrorCam.ResetProjectionMatrix();
+    }
+
+    private void RenderMirrorCamera()
+    {
+        var previousLayer = gameObject.layer;
+        gameObject.layer = _mirrorIgnoreLayer;
+        try { _mirrorCam.Render(); }
+        finally { gameObject.layer = previousLayer; }
     }
 
     private bool ShouldUseDeadZone(out string reason)
@@ -305,6 +298,7 @@ public class VisualMirror : MonoBehaviour
     {
         if (!_mirrorRenderer) return;
 
+        // SetMirrorLayer(_visibleMirrorLayer);
         var material = GetActiveMirrorMaterial();
         if (!material) return;
         if (_mirrorRenderer.sharedMaterial == material) return;
@@ -313,8 +307,15 @@ public class VisualMirror : MonoBehaviour
 
     private void ApplyDeadZoneMaterial()
     {
+        // SetMirrorLayer(_mirrorIgnoreLayer);
         if (!_mirrorRenderer || !mirrorDeadZoneMat) return;
         _mirrorRenderer.sharedMaterial = mirrorDeadZoneMat;
+    }
+
+    private void SetMirrorLayer(int layer)
+    {
+        if (layer < 0 || gameObject.layer == layer) return;
+        gameObject.layer = layer;
     }
 
     private Material GetActiveMirrorMaterial()

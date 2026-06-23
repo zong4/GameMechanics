@@ -96,7 +96,7 @@ GameObject:
   - component: {fileID: 1864192937760685274}
   - component: {fileID: 2302467597838667647}
   - component: {fileID: 2502098548793833342}
-  m_Layer: 3
+  m_Layer: 0
   m_Name: VisualMirror
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -206,10 +206,13 @@ MonoBehaviour:
   mirrorCamPrefab: {fileID: 9124174916488370216, guid: 5db789bf44fd8f84aa8c72997c51bec2, type: 3}
   mirrorMatTemplate: {fileID: 2100000, guid: 97eccde8e0afb3042aa1e0a4b3b78fc3, type: 2}
   mirrorDeadZoneMat: {fileID: 2100000, guid: 5e16aa42362fb4d45873c24e835614ad, type: 2}
-  samplingMode: 0
+  samplingMode: 1
   screenSpaceShader: {fileID: 4800000, guid: 9dd7a91db9b34a64fa6547a7a6d59e48, type: 3}
   screenSpaceFlipX: 1
   screenSpaceFlipY: 0
+  hideSelfWhenRenderingMirrorCamera: 1
+  visibleMirrorLayerName: Default
+  mirrorIgnoreLayerName: Mirror
   rtWidth: 1024
   rtHeight: 1024
   rtDepth: 24

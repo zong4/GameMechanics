@@ -27,8 +27,10 @@ public class VisualMirror : MonoBehaviour
     private RenderTexture _mirrorRT;
     private Renderer _mirrorRenderer;
     private Material _mirrorInstancedMat;
-    private readonly LayerMask _visibleMirrorLayer = LayerMask.NameToLayer("Default");
-    private readonly LayerMask _ignoreMirrorLayer = LayerMask.NameToLayer("Mirror");
+    private const string VisibleMirrorLayerName = "Default";
+    private const string IgnoreMirrorLayerName = "Mirror";
+    private int _visibleMirrorLayer = -1;
+    private int _ignoreMirrorLayer = -1;
 
     public enum MirrorSamplingMode
     {
@@ -51,6 +53,7 @@ public class VisualMirror : MonoBehaviour
 
     private void OnEnable()
     {
+        ResolveMirrorLayers();
         ResolveMainCamera();
         SetupMirrorCamera();
         SetupRenderTexture();
@@ -101,6 +104,15 @@ public class VisualMirror : MonoBehaviour
         _mirrorCam.ResetProjectionMatrix();
     }
 
+    private void ResolveMirrorLayers()
+    {
+        _visibleMirrorLayer = LayerMask.NameToLayer(VisibleMirrorLayerName);
+        _ignoreMirrorLayer = LayerMask.NameToLayer(IgnoreMirrorLayerName);
+        if (_visibleMirrorLayer < 0)
+            Debug.LogWarning($"[{name}] Layer '{VisibleMirrorLayerName}' does not exist", this);
+        if (_ignoreMirrorLayer < 0) Debug.LogWarning($"[{name}] Layer '{IgnoreMirrorLayerName}' does not exist", this);
+    }
+
     private void ResolveMainCamera()
     {
         if (mainCam) return;
@@ -143,7 +155,6 @@ public class VisualMirror : MonoBehaviour
         switch (samplingMode)
         {
             case MirrorSamplingMode.AsymmetricFrustum:
-                Debug.LogWarning($"[{name}] 使用非对称视锥体采样模式，需要指定 asymmetricFrustumMatTemplate 材质模板", this);
                 _mirrorInstancedMat = new Material(asymmetricFrustumMatTemplate)
                 {
                     name = $"{name}_MirrorAsymmetricFrustumMat",
@@ -153,7 +164,6 @@ public class VisualMirror : MonoBehaviour
                 };
                 break;
             case MirrorSamplingMode.ScreenSpaceUV:
-                Debug.LogWarning($"[{name}] 使用屏幕空间 UV 采样模式，需要指定 screenSpaceMatTemplate 材质模板", this);
                 _mirrorInstancedMat = new Material(screenSpaceMatTemplate)
                 {
                     name = $"{name}_MirrorScreenSpaceMat", mainTexture = _mirrorRT
@@ -259,7 +269,6 @@ public class VisualMirror : MonoBehaviour
     private bool CanMainCameraSeeMirror()
     {
         if (!mainCam || !_mirrorRenderer || !_mirrorRenderer.enabled) return false;
-        if ((mainCam.cullingMask & (1 << _mirrorRenderer.gameObject.layer)) == 0) return false;
         var planes = GeometryUtility.CalculateFrustumPlanes(mainCam);
         return GeometryUtility.TestPlanesAABB(planes, _mirrorRenderer.bounds);
     }

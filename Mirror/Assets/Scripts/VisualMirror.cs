@@ -13,38 +13,41 @@ public class VisualMirror : MonoBehaviour
     [Header("Setup")]
     [Tooltip("默认使用场景主摄像机")] public Camera mainCam;
     public Camera mirrorCamPrefab;
-    public Material mirrorMatTemplate;
-    public Material mirrorDeadZoneMat;
-
-    [Header("Sampling Mode")]
     public MirrorSamplingMode samplingMode = MirrorSamplingMode.ScreenSpaceUV;
-    public Shader screenSpaceShader;
-    public bool screenSpaceFlipX = true;
-    public bool screenSpaceFlipY;
+    public Material asymmetricFrustumMatTemplate;
+    public Material screenSpaceMatTemplate;
+    public Material deadZoneMat;
 
     [Header("Render Texture")]
     public int rtWidth = 1024;
     public int rtHeight = 1024;
     public int rtDepth = 24;
 
-    [Header("Dead Zone")]
-    public bool useDeadZoneWhenMainCameraCannotSeeMirror = true;
-    public bool requireFrontSide = true;
-
     private Camera _mirrorCam;
     private RenderTexture _mirrorRT;
-    private Material _mirrorInstancedMat;
-    private Material _screenSpaceInstancedMat;
     private Renderer _mirrorRenderer;
-    private const string ScreenSpaceShaderName = "Mirror/ScreenSpaceUV";
+    private Material _mirrorInstancedMat;
     private readonly LayerMask _visibleMirrorLayer = LayerMask.NameToLayer("Default");
-    private readonly LayerMask _mirrorIgnoreLayer = LayerMask.NameToLayer("Mirror");
+    private readonly LayerMask _ignoreMirrorLayer = LayerMask.NameToLayer("Mirror");
 
     public enum MirrorSamplingMode
     {
         AsymmetricFrustum,
         ScreenSpaceUV
     }
+
+    public enum MirrorViewState
+    {
+        ActiveReflection,
+        DeadZone
+    }
+
+    [Header("Debug Info")]
+    public bool showDebugInfo;
+    [SerializeField] [ReadOnly] public MirrorViewState viewState = MirrorViewState.DeadZone;
+    [SerializeField] [ReadOnly] public string deadZoneReason = "Initializing";
+    [SerializeField] [ReadOnly] public List<Vector3> mainCamDirs = new();
+    [SerializeField] [ReadOnly] public List<Vector3> mirrorCamDirs = new();
 
     private void OnEnable()
     {
@@ -59,6 +62,45 @@ public class VisualMirror : MonoBehaviour
         Cleanup();
     }
 
+    private void LateUpdate()
+    {
+        if (!mainCam || !_mirrorCam || !_mirrorRT) return;
+
+        // ==== 1. 判断是否需要显示 Dead Zone =====
+        var shouldUseDeadZone = ShouldUseDeadZone(out var reason);
+        if (shouldUseDeadZone)
+        {
+            viewState = MirrorViewState.DeadZone;
+            deadZoneReason = reason;
+            ApplyDeadZoneMaterial();
+            return;
+        }
+
+        // ===== 2. 更新镜中相机的位置和朝向 =====
+        viewState = MirrorViewState.ActiveReflection;
+        deadZoneReason = string.Empty;
+        ApplyMirrorMaterial();
+        UpdateMirrorCameraTransform();
+
+        // ===== 3. 根据采样模式设置镜中相机的投影矩阵 =====
+        switch (samplingMode)
+        {
+            case MirrorSamplingMode.AsymmetricFrustum:
+                SetAsymmetricFrustum();
+                break;
+            case MirrorSamplingMode.ScreenSpaceUV:
+                ApplyMainCameraProjectionToMirrorCamera();
+                break;
+            default:
+                Debug.LogWarning($"[{name}] 未知的采样模式 {samplingMode}", this);
+                break;
+        }
+
+        // ==== 4. 渲染镜中相机 =====
+        RenderMirrorCamera();
+        _mirrorCam.ResetProjectionMatrix();
+    }
+
     private void ResolveMainCamera()
     {
         if (mainCam) return;
@@ -70,6 +112,7 @@ public class VisualMirror : MonoBehaviour
     {
         _mirrorCam = transform.GetComponentInChildren<Camera>();
         if (_mirrorCam) return;
+
         _mirrorCam = Instantiate(mirrorCamPrefab, transform);
         _mirrorCam.name = $"{name}_MirrorCam";
         _mirrorCam.enabled = false;
@@ -78,6 +121,7 @@ public class VisualMirror : MonoBehaviour
     private void SetupRenderTexture()
     {
         if (_mirrorRT) return;
+
         _mirrorRT = new RenderTexture(rtWidth, rtHeight, rtDepth)
         {
             name = $"{name}_MirrorRT",
@@ -86,6 +130,7 @@ public class VisualMirror : MonoBehaviour
             filterMode = FilterMode.Trilinear
         };
         _mirrorRT.Create();
+
         if (_mirrorCam) _mirrorCam.targetTexture = _mirrorRT;
         else Debug.LogWarning($"[{name}] 无法将 RenderTexture 赋给镜中相机，因为镜中相机未创建成功", this);
     }
@@ -94,34 +139,34 @@ public class VisualMirror : MonoBehaviour
     {
         _mirrorRenderer = GetComponent<Renderer>();
         if (!_mirrorRenderer) return;
-        if (!mirrorMatTemplate)
+
+        switch (samplingMode)
         {
-            Debug.LogWarning($"[{name}] 未指定 mirrorMaterial，无法创建镜面材质", this);
-            return;
+            case MirrorSamplingMode.AsymmetricFrustum:
+                Debug.LogWarning($"[{name}] 使用非对称视锥体采样模式，需要指定 asymmetricFrustumMatTemplate 材质模板", this);
+                _mirrorInstancedMat = new Material(asymmetricFrustumMatTemplate)
+                {
+                    name = $"{name}_MirrorAsymmetricFrustumMat",
+                    mainTextureScale = new Vector2(-1, 1), // 因为反射会导致左右镜像翻转，翻转贴图 U 方向纠正左右关系
+                    mainTextureOffset = new Vector2(1, 0),
+                    mainTexture = _mirrorRT
+                };
+                break;
+            case MirrorSamplingMode.ScreenSpaceUV:
+                Debug.LogWarning($"[{name}] 使用屏幕空间 UV 采样模式，需要指定 screenSpaceMatTemplate 材质模板", this);
+                _mirrorInstancedMat = new Material(screenSpaceMatTemplate)
+                {
+                    name = $"{name}_MirrorScreenSpaceMat", mainTexture = _mirrorRT
+                };
+                // _mirrorInstancedMat.SetFloat("_FlipX", 1f); // 因为反射会导致左右镜像翻转，翻转贴图 X 方向纠正左右关系
+                // _mirrorInstancedMat.SetFloat("_FlipY", 0f);
+                break;
+            default:
+                Debug.LogWarning($"[{name}] 未知的采样模式 {samplingMode}", this);
+                break;
         }
 
-        _mirrorInstancedMat = new Material(mirrorMatTemplate)
-        {
-            name = $"{name}_MirrorMat",
-            mainTextureScale = new Vector2(-1, 1), // 因为反射会导致左右镜像翻转，翻转贴图 U 方向纠正左右关系
-            mainTextureOffset = new Vector2(1, 0),
-            mainTexture = _mirrorRT
-        };
-
-        SetupScreenSpaceMaterial();
         ApplyDeadZoneMaterial();
-    }
-
-    private void SetupScreenSpaceMaterial()
-    {
-        var shader = screenSpaceShader ? screenSpaceShader : Shader.Find(ScreenSpaceShaderName);
-        if (!shader) return;
-
-        _screenSpaceInstancedMat = new Material(shader)
-        {
-            name = $"{name}_ScreenSpaceMirrorMat", mainTexture = _mirrorRT
-        };
-        ApplyScreenSpaceMaterialSettings();
     }
 
     private void Cleanup()
@@ -147,56 +192,20 @@ public class VisualMirror : MonoBehaviour
             else DestroyImmediate(_mirrorInstancedMat);
             _mirrorInstancedMat = null;
         }
-
-        if (_screenSpaceInstancedMat)
-        {
-            if (Application.isPlaying) Destroy(_screenSpaceInstancedMat);
-            else DestroyImmediate(_screenSpaceInstancedMat);
-            _screenSpaceInstancedMat = null;
-        }
     }
 
-    public enum MirrorViewState
+    private void UpdateMirrorCameraTransform()
     {
-        ActiveReflection,
-        DeadZone
-    }
+        var normal = transform.forward;
+        var mirrorPosition = transform.position;
+        if (showDebugInfo) Debug.DrawLine(mirrorPosition, mirrorPosition + normal, Color.green);
 
+        var inDir = mirrorPosition - mainCam.transform.position;
+        var outDir = Vector3.Reflect(inDir, normal);
+        _mirrorCam.transform.position = mirrorPosition - outDir;
+        _mirrorCam.transform.rotation = Quaternion.LookRotation(Vector3.Reflect(mainCam.transform.forward, normal),
+            Vector3.Reflect(mainCam.transform.up, normal));
 
-    [Header("Debug Info")]
-    public bool showDebugInfo;
-    [SerializeField] [ReadOnly] public MirrorViewState viewState = MirrorViewState.DeadZone;
-    [SerializeField] [ReadOnly] public string deadZoneReason = "Initializing";
-    [SerializeField] [ReadOnly] public List<Vector3> mainCamDirs = new();
-    [SerializeField] [ReadOnly] public List<Vector3> mirrorCamDirs = new();
-
-    private void LateUpdate()
-    {
-        if (!mainCam || !_mirrorCam || !_mirrorRT) return;
-
-        // ===== 1. 根据摄像机与镜子的相对位置关系，判断是渲染镜面反射还是显示 Dead Zone =====
-        var shouldUseDeadZone = ShouldUseDeadZone(out var reason);
-        deadZoneReason = reason;
-        if (shouldUseDeadZone)
-        {
-            viewState = MirrorViewState.DeadZone;
-            ApplyDeadZoneMaterial();
-            return;
-        }
-        viewState = MirrorViewState.ActiveReflection;
-        ApplyMirrorMaterial();
-
-        // ===== 2. 计算镜中相机的位置 =====
-        var n = transform.forward;
-        var p = transform.position;
-        if (showDebugInfo) Debug.DrawLine(p, p + n, Color.green); // 镜面法线
-        var inDir = p - mainCam.transform.position; // 相机 -> 镜子
-        var outDir = Vector3.Reflect(inDir, n); // 镜子 -> 反射的相机 != 镜中的相机
-        _mirrorCam.transform.position = p - outDir;
-
-        // ===== 3. 计算镜中相机的朝向 =====
-        _mirrorCam.transform.rotation = Quaternion.LookRotation(Vector3.Reflect(mainCam.transform.forward, n),
-            Vector3.Reflect(mainCam.transform.up, n));
         mainCamDirs = new List<Vector3>
         {
             Math.RoundVector3(mainCam.transform.forward),
@@ -209,20 +218,12 @@ public class VisualMirror : MonoBehaviour
             Math.RoundVector3(_mirrorCam.transform.up),
             Math.RoundVector3(_mirrorCam.transform.right)
         };
-
-        // ===== 4. 根据采样模式决定由相机裁剪，还是由屏幕空间 UV 裁剪 =====
-        if (samplingMode == MirrorSamplingMode.AsymmetricFrustum) SetAsymmetricFrustum();
-        else ApplyMainCameraProjectionToMirrorCamera();
-
-        // ===== 5. 渲染到 RenderTexture =====
-        RenderMirrorCamera();
-        _mirrorCam.ResetProjectionMatrix();
     }
 
     private void RenderMirrorCamera()
     {
         var previousLayer = gameObject.layer;
-        gameObject.layer = _mirrorIgnoreLayer;
+        gameObject.layer = _ignoreMirrorLayer; // 避免镜中相机渲染到自身
         try { _mirrorCam.Render(); }
         finally { gameObject.layer = previousLayer; }
     }
@@ -230,9 +231,8 @@ public class VisualMirror : MonoBehaviour
     private bool ShouldUseDeadZone(out string reason)
     {
         reason = string.Empty;
-        if (!useDeadZone) return false;
 
-        if (useDeadZoneWhenMainCameraCannotSeeMirror && !CanMainCameraSeeMirror())
+        if (!CanMainCameraSeeMirror())
         {
             reason = "Main camera cannot see mirror";
             return true;
@@ -247,39 +247,9 @@ public class VisualMirror : MonoBehaviour
 
         var mirrorToCamera = mainCam.transform.position - transform.position;
         var signedDistance = Vector3.Dot(mirrorToCamera, transform.forward);
-        if (requireFrontSide && signedDistance <= 0f)
+        if (signedDistance <= 0f)
         {
             reason = "Camera is behind mirror";
-            return true;
-        }
-
-        var distance = Mathf.Abs(signedDistance);
-        var minDistanceEnter = Mathf.Min(minActiveDistance, minActiveDistanceExit);
-        var minDistanceExit = Mathf.Max(minActiveDistance, minActiveDistanceExit);
-        var minDistanceThreshold = viewState == MirrorViewState.DeadZone ? minDistanceExit : minDistanceEnter;
-        if (distance < minDistanceThreshold)
-        {
-            reason = "Camera is too close";
-            return true;
-        }
-
-        var maxDistanceEnter = Mathf.Max(maxActiveDistance, maxActiveDistanceExit);
-        var maxDistanceExit = Mathf.Min(maxActiveDistance, maxActiveDistanceExit);
-        var maxDistanceThreshold = viewState == MirrorViewState.DeadZone ? maxDistanceExit : maxDistanceEnter;
-        if (distance > maxDistanceThreshold)
-        {
-            reason = "Camera is too far";
-            return true;
-        }
-
-        var toMirror = cameraToMirror.normalized;
-        var viewAngleEnter = Mathf.Max(maxViewAngle, maxViewAngleExit);
-        var viewAngleExit = Mathf.Min(maxViewAngle, maxViewAngleExit);
-        var viewAngleThreshold = viewState == MirrorViewState.DeadZone ? viewAngleExit : viewAngleEnter;
-        var viewAngle = Vector3.Angle(mainCam.transform.forward, toMirror);
-        if (viewAngle > viewAngleThreshold)
-        {
-            reason = "Camera is not looking at mirror";
             return true;
         }
 
@@ -296,52 +266,16 @@ public class VisualMirror : MonoBehaviour
 
     private void ApplyMirrorMaterial()
     {
-        if (!_mirrorRenderer) return;
-
-        // SetMirrorLayer(_visibleMirrorLayer);
-        var material = GetActiveMirrorMaterial();
-        if (!material) return;
-        if (_mirrorRenderer.sharedMaterial == material) return;
-        _mirrorRenderer.sharedMaterial = material;
+        if (!_mirrorRenderer || !_mirrorInstancedMat) return;
+        gameObject.layer = _visibleMirrorLayer;
+        _mirrorRenderer.sharedMaterial = _mirrorInstancedMat;
     }
 
     private void ApplyDeadZoneMaterial()
     {
-        // SetMirrorLayer(_mirrorIgnoreLayer);
-        if (!_mirrorRenderer || !mirrorDeadZoneMat) return;
-        _mirrorRenderer.sharedMaterial = mirrorDeadZoneMat;
-    }
-
-    private void SetMirrorLayer(int layer)
-    {
-        if (layer < 0 || gameObject.layer == layer) return;
-        gameObject.layer = layer;
-    }
-
-    private Material GetActiveMirrorMaterial()
-    {
-        if (samplingMode == MirrorSamplingMode.ScreenSpaceUV)
-        {
-            if (!_screenSpaceInstancedMat) SetupScreenSpaceMaterial();
-            if (_screenSpaceInstancedMat)
-            {
-                _screenSpaceInstancedMat.mainTexture = _mirrorRT;
-                ApplyScreenSpaceMaterialSettings();
-                return _screenSpaceInstancedMat;
-            }
-
-            Debug.LogWarning($"[{name}] 未找到 {ScreenSpaceShaderName} Shader，回退到非对称视锥模式", this);
-        }
-
-        if (_mirrorInstancedMat) _mirrorInstancedMat.mainTexture = _mirrorRT;
-        return _mirrorInstancedMat;
-    }
-
-    private void ApplyScreenSpaceMaterialSettings()
-    {
-        if (!_screenSpaceInstancedMat) return;
-        _screenSpaceInstancedMat.SetFloat("_FlipX", screenSpaceFlipX ? 1f : 0f);
-        _screenSpaceInstancedMat.SetFloat("_FlipY", screenSpaceFlipY ? 1f : 0f);
+        if (!_mirrorRenderer || !deadZoneMat) return;
+        gameObject.layer = _ignoreMirrorLayer;
+        _mirrorRenderer.sharedMaterial = deadZoneMat;
     }
 
     private void ApplyMainCameraProjectionToMirrorCamera()
@@ -357,13 +291,11 @@ public class VisualMirror : MonoBehaviour
 
     private void SetAsymmetricFrustum()
     {
-        // --- 镜面在 Cube 本地空间中的四个角点 ---
-        var localBL = new Vector3(-0.5f, -0.5f, 0.5f); // 左下
-        var localBR = new Vector3(0.5f, -0.5f, 0.5f); // 右下
-        var localTL = new Vector3(-0.5f, 0.5f, 0.5f); // 左上
-        var localTR = new Vector3(0.5f, 0.5f, 0.5f); // 右上
+        var localBL = new Vector3(-0.5f, -0.5f, 0.5f);
+        var localBR = new Vector3(0.5f, -0.5f, 0.5f);
+        var localTL = new Vector3(-0.5f, 0.5f, 0.5f);
+        var localTR = new Vector3(0.5f, 0.5f, 0.5f);
 
-        // --- 转换到世界坐标（应用物体的位置/旋转/缩放） ---
         var worldBL = transform.TransformPoint(localBL);
         var worldBR = transform.TransformPoint(localBR);
         var worldTL = transform.TransformPoint(localTL);
@@ -376,20 +308,15 @@ public class VisualMirror : MonoBehaviour
             Debug.DrawLine(worldTL, worldBL, Color.red);
         }
 
-        // --- 转换到 mirrorCam 的相机空间 ---
         var worldToCam = _mirrorCam.worldToCameraMatrix;
         var camBL = worldToCam.MultiplyPoint(worldBL);
         var camBR = worldToCam.MultiplyPoint(worldBR);
         var camTL = worldToCam.MultiplyPoint(worldTL);
         var camTR = worldToCam.MultiplyPoint(worldTR);
-        // Debug.Log($"[{name}] 镜面四个角点的相机空间坐标：BL={camBL}, BR={camBR}, TL={camTL}, TR={camTR}");
 
-        // --- 确定 near/far 平面距离 ---
-        var near = Mathf.Min(-camBL.z, -camBR.z, -camTL.z, -camTR.z); // 相机空间中，相机正前方的点 z 为负值
+        var near = Mathf.Min(-camBL.z, -camBR.z, -camTL.z, -camTR.z);
         var far = _mirrorCam.farClipPlane;
 
-        // --- 将四个角点投影到 near 平面上 ---
-        // 透视投影下，点 (x,y,z) 投影到距离为 near 的平面上时，屏幕坐标按比例 near/(-z) 缩放
         var scaleBL = near / -camBL.z;
         var scaleBR = near / -camBR.z;
         var scaleTL = near / -camTL.z;
@@ -399,43 +326,12 @@ public class VisualMirror : MonoBehaviour
         var nearTL = new Vector3(camTL.x * scaleTL, camTL.y * scaleTL, -near);
         var nearTR = new Vector3(camTR.x * scaleTR, camTR.y * scaleTR, -near);
 
-        // --- 由投影后的四个角点求轴对齐包围盒（AABB），作为视锥体边界 ---
-        float left, right, bottom, top;
-        switch (frustumFitMode)
-        {
-            // case FrustumFitMode.Default:
-            //     left = Mathf.Min(nearBL.x, Mathf.Min(nearBR.x, Mathf.Min(nearTL.x, nearTR.x)));
-            //     right = Mathf.Max(nearBL.x, Mathf.Max(nearBR.x, Mathf.Max(nearTL.x, nearTR.x)));
-            //     bottom = Mathf.Min(nearBL.y, Mathf.Min(nearBR.y, Mathf.Min(nearTL.y, nearTR.y)));
-            //     top = Mathf.Max(nearBL.y, Mathf.Max(nearBR.y, Mathf.Max(nearTL.y, nearTR.y)));
-            //     break;
-            case FrustumFitMode.Contain:
-                left = Mathf.Min(nearBL.x, nearTL.x);
-                right = Mathf.Max(nearBR.x, nearTR.x);
-                bottom = Mathf.Min(nearBL.y, nearBR.y);
-                top = Mathf.Max(nearTL.y, nearTR.y);
-                break;
-            case FrustumFitMode.Fit:
-                left = Mathf.Max(nearBL.x, nearTL.x);
-                right = Mathf.Min(nearBR.x, nearTR.x);
-                bottom = Mathf.Max(nearBL.y, nearBR.y);
-                top = Mathf.Min(nearTL.y, nearTR.y);
-                break;
-            case FrustumFitMode.Average:
-                left = (nearBL.x + nearTL.x) * 0.5f;
-                right = (nearBR.x + nearTR.x) * 0.5f;
-                bottom = (nearBL.y + nearBR.y) * 0.5f;
-                top = (nearTL.y + nearTR.y) * 0.5f;
-                break;
-            default:
-                left = right = bottom = top = 0;
-                Debug.LogError($"[{name}] 未知的 frustumFitMode={frustumFitMode}", this);
-                break;
-        }
+        var left = Mathf.Max(nearBL.x, nearTL.x);
+        var right = Mathf.Min(nearBR.x, nearTR.x);
+        var bottom = Mathf.Max(nearBL.y, nearBR.y);
+        var top = Mathf.Min(nearTL.y, nearTR.y);
         if (showDebugInfo) Math.DrawFrustumDebug(worldToCam, left, right, bottom, top, near, far);
 
-        // --- 构造非对称透视投影矩阵并应用 ---
-        var proj = Math.PerspectiveOffCenter(left, right, bottom, top, near, far);
-        _mirrorCam.projectionMatrix = proj;
+        _mirrorCam.projectionMatrix = Math.PerspectiveOffCenter(left, right, bottom, top, near, far);
     }
 }
